@@ -26,10 +26,19 @@ val CHECKSUM_JS = """
  * Post-condiții: returnează un Int egal cu suma valorilor ASCII ale caracterelor din [word].
  *
  * Exemplu:
- *   computeChecksumJS("abc") == 97 + 98 + 99 == 294
+ * computeChecksumJS("abc") == 97 + 98 + 99 == 294
  */
 fun computeChecksumJS(word: String): Int {
-    TODO("De implementat: folosește Context.create(\"js\") și evaluează CHECKSUM_JS + apelează checksum(word)")
+    return Context.create("js").use { context ->
+        // Evaluam string-ul cu codul JS pentru ca functia sa devina disponibila in context
+        context.eval("js", CHECKSUM_JS)
+
+        // Preluam functia 'checksum' din contextul JS
+        val jsFunction = context.getBindings("js").getMember("checksum")
+
+        // Executam functia transmitand parametrul 'word' si returnam rezultatul ca Int
+        jsFunction.execute(word).asInt()
+    }
 }
 
 /**
@@ -39,10 +48,18 @@ fun computeChecksumJS(word: String): Int {
  * Post-condiții: returnează o nouă listă cu fiecare cuvânt transformat prin .toUpperCase() JS.
  *
  * Exemplu:
- *   upperCaseWordsJS(listOf("ana", "mere")) == listOf("ANA", "MERE")
+ * upperCaseWordsJS(listOf("ana", "mere")) == listOf("ANA", "MERE")
  */
 fun upperCaseWordsJS(words: List<String>): List<String> {
-    TODO("De implementat: evaluează expresie JS care apelează word.toUpperCase() pentru fiecare cuvânt")
+    return Context.create("js").use { context ->
+        words.map { word ->
+            // Injectam cuvantul curent in contextul JS intr-o variabila numita "currentWord"
+            context.getBindings("js").putMember("currentWord", word)
+
+            // Evaluam expresia care apeleaza .toUpperCase() pe variabila noastra
+            context.eval("js", "currentWord.toUpperCase()").asString()
+        }
+    }
 }
 
 /**
@@ -50,16 +67,20 @@ fun upperCaseWordsJS(words: List<String>): List<String> {
  *
  * Pre-condiții: [words] poate fi goală.
  * Post-condiții:
- *   - returnează un Map<Int, List<String>> unde cheia este suma de control
- *   - în map apar doar grupurile cu >= 2 cuvinte (cuvinte cu aceeași sumă de control)
- *   - cuvintele din fiecare grup sunt în ordinea în care apar în [words]
+ * - returnează un Map<Int, List<String>> unde cheia este suma de control
+ * - în map apar doar grupurile cu >= 2 cuvinte (cuvinte cu aceeași sumă de control)
+ * - cuvintele din fiecare grup sunt în ordinea în care apar în [words]
  *
  * Exemplu:
- *   "abc" și "bca" au ambele checksum 294 → apar în același grup
- *   "aa" are checksum 194 și e singurul → nu apare în rezultat
+ * "abc" și "bca" au ambele checksum 294 → apar în același grup
+ * "aa" are checksum 194 și e singurul → nu apare în rezultat
  */
 fun groupByChecksum(words: List<String>): Map<Int, List<String>> {
-    TODO("De implementat: folosește computeChecksumJS pentru fiecare cuvânt, apoi grupează și filtrează")
+    return words
+        // Grupam cuvintele folosind checksum-ul ca si cheie
+        .groupBy { computeChecksumJS(it) }
+        // Pastram doar grupurile care au o lista (valoare) de dimensiune >= 2
+        .filter { it.value.size >= 2 }
 }
 
 /**
@@ -67,8 +88,13 @@ fun groupByChecksum(words: List<String>): Map<Int, List<String>> {
  * Format: "Checksum <N>: [cuvant1, cuvant2, ...]"
  *
  * Exemplu pentru groupByChecksum(listOf("abc","bca","hello","aa")):
- *   Checksum 294: [abc, bca]
+ * Checksum 294: [abc, bca]
  */
 fun printDuplicateChecksums(words: List<String>) {
-    TODO("De implementat: apelează groupByChecksum, iterează și printează fiecare grup")
+    val groupedWords = groupByChecksum(words)
+
+    // Iteram prin dictionar si afisam conform formatului cerut
+    for ((checksum, wordList) in groupedWords) {
+        println("Checksum $checksum: $wordList")
+    }
 }
